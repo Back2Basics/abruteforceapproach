@@ -14,10 +14,11 @@ shut_up = open(os.devnull, 'w')
 ok_start_talking = sys.stdout, sys.stderr
 
 def fns(libr):
-    # if libr == np:
+    """generate a list of functions from the library or module (shortened libr)"""
+    
     functions_list = [o for o in getmembers(libr) 
-                      if (isfunction(o[1]) is o[0].islower()
-                      or (type(o[1]) is 'numpy.ufunc'  and o[0].islower()))
+                      if isfunction(o[1]) or (type(o[1]) is 'numpy.ufunc')   
+                      and o[0].islower()
                       and o[0] not in deprecated_fns
                       and o[0] not in non_calculating]
     for fn in functions_list:
@@ -25,7 +26,11 @@ def fns(libr):
 
 # sys.stdout = sys.stdin
 
-def possibilities(**kwargs):
+def possibilities(libs = [np], **kwargs):
+    """ generate possibile functions or combinations of functions
+    using combinations of arguments of those functions,
+    to get from start to finish with your scope limited to list of modules in libs.
+    """
     sys.stdout = sys.stderr = shut_up
     libs = kwargs['libs']
     start = kwargs['start']
@@ -35,9 +40,10 @@ def possibilities(**kwargs):
         for x in fns(lib):
             try:
                 if lib == np:
-                    if np.all(x[1](start) == finish) and \
-                        np.equal(x[1](start) == finish) and \
-                        np.ndim(x[1](start) == finish):
+                    fn_start = x[1](start)
+                    a = np.all(np.equal(fn_start, finish))
+                    b = np.ndim(fn_start) == np.ndim(finish)
+                    if a and b:
                         yield x
                 else:
                     if x[1](start) == finish:
@@ -46,6 +52,4 @@ def possibilities(**kwargs):
                 pass
     sys.stdout, sys.stderr = ok_start_talking
     
-if __name__ == "__main__":
-    pprint(list(possibilities(libs=[np, ], start=start, finish=finish)))
 
